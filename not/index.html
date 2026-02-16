@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siyah Beyaz Notlar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Klasörler</h2>
+                <button id="btn-add-folder" title="Klasör Ekle">+</button>
+            </div>
+            <div id="folder-list">
+                <div class="folder-item active" data-id="all">Tüm Notlar</div>
+                <!-- Klasörler buraya gelecek -->
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>S/B Notlar</h1>
+                <p>Basit. Odaklı.</p>
+            </header>
+
+            <section class="input-section">
+                <div class="tabs">
+                    <button id="tab-notes" class="tab-btn active">Notlar</button>
+                    <button id="tab-todos" class="tab-btn">Yapılacaklar</button>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="input-title" placeholder="Başlık (Opsiyonel)">
+                    <textarea id="input-content" placeholder="Buraya yazın..."></textarea>
+                    <button id="btn-add">Ekle</button>
+                </div>
+            </section>
+
+            <section class="list-section">
+                <div id="notes-list" class="list-container active-view">
+                    <!-- Notlar buraya gelecek -->
+                    <div class="empty-state">Henüz not yok.</div>
+                </div>
+                <div id="todos-list" class="list-container hidden-view">
+                    <!-- Yapılacaklar buraya gelecek -->
+                    <div class="empty-state">Yapılacak bir şey yok.</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs (Compat version for easier local testing) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Main App Script -->
+    <script src="app.js"></script>
+</body>
+
+</html>
