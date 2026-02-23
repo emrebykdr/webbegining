@@ -11,7 +11,8 @@ let state = {
     currentSort: 'newest',
     searchQuery: '',
     theme: 'light',
-    lang: 'en'
+    lang: 'en',
+    editingProductId: null
 };
 
 // Category emoji mapping for placeholders
@@ -47,7 +48,14 @@ const TRANSLATIONS = {
         catOther: 'Other',
         imageLabel: 'Product Image (optional)',
         imageDragText: 'Click or drag image here',
+        imageUrlLabel: 'OR Image URL',
+        imageUrlPlaceholder: 'https://example.com/image.jpg',
         submitProduct: '🚀 Add Product',
+        saveChanges: '💾 Save Changes',
+        editProduct: 'Edit Product',
+        addNewProduct: 'Add New Product',
+        toastUpdated: 'has been updated!',
+        editButton: 'Edit',
         // Toolbar
         categoryToolbar: 'Category:',
         filterAll: 'All',
@@ -114,7 +122,14 @@ const TRANSLATIONS = {
         catOther: 'Diğer',
         imageLabel: 'Ürün Görseli (isteğe bağlı)',
         imageDragText: 'Görsel yüklemek için tıklayın veya sürükleyin',
+        imageUrlLabel: 'VEYA Ürün Görsel Linki (URL)',
+        imageUrlPlaceholder: 'https://ornek.com/resim.jpg',
         submitProduct: '🚀 Ürün Ekle',
+        saveChanges: '💾 Değişiklikleri Kaydet',
+        editProduct: 'Ürünü Düzenle',
+        addNewProduct: 'Yeni Ürün Ekle',
+        toastUpdated: 'güncellendi!',
+        editButton: 'Düzenle',
         // Toolbar
         categoryToolbar: 'Kategori:',
         filterAll: 'Tümü',
@@ -406,6 +421,40 @@ function initImageUpload() {
             handleImageFile(e.dataTransfer.files[0]);
         }
     });
+
+    // Handle Image URL Preview
+    const urlInput = document.getElementById('productImageUrl');
+    urlInput.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        if (url) {
+            // Set up error handler for broken URLs
+            preview.onerror = () => {
+                showToast(state.lang === 'tr' ? 'Geçersiz görsel URL\'si!' : 'Invalid image URL!', 'error');
+                preview.src = '';
+                preview.hidden = true;
+                placeholder.hidden = false;
+            };
+
+            preview.src = url;
+            preview.hidden = false;
+            placeholder.hidden = true;
+
+            // Clear file upload state if URL is being used
+            currentImageData = null;
+            fileInput.value = '';
+        } else if (!currentImageData) {
+            preview.hidden = true;
+            preview.src = '';
+            placeholder.hidden = false;
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            // Clear URL if file is chosen
+            if (urlInput) urlInput.value = '';
+        }
+    });
 }
 
 // Read image file using FileReader API and convert to base64
@@ -437,10 +486,12 @@ function resetImageUpload() {
     const preview = document.getElementById('imagePreview');
     const placeholder = document.getElementById('uploadPlaceholder');
     const fileInput = document.getElementById('productImage');
+    const urlInput = document.getElementById('productImageUrl');
     preview.hidden = true;
     preview.src = '';
     placeholder.hidden = false;
     fileInput.value = '';
+    if (urlInput) urlInput.value = '';
 }
 
 // ===== ADD PRODUCT =====
@@ -452,7 +503,8 @@ function handleAddProduct(e) {
         title: document.getElementById('productTitle').value,
         description: document.getElementById('productDescription').value,
         price: document.getElementById('productPrice').value,
-        category: document.getElementById('productCategory').value
+        category: document.getElementById('productCategory').value,
+        imageUrl: document.getElementById('productImageUrl').value.trim()
     };
 
     // Validate
@@ -462,25 +514,42 @@ function handleAddProduct(e) {
         return;
     }
 
-    // Create product object
-    const product = {
-        id: generateId(),
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        price: parseFloat(formData.price),
-        category: formData.category,
-        likes: 0,
-        comments: [],
-        image: currentImageData || null,
-        createdAt: new Date().toISOString()
-    };
+    // Create product object or update existing
+    if (state.editingProductId) {
+        const index = state.products.findIndex(p => p.id === state.editingProductId);
+        if (index !== -1) {
+            const oldProduct = state.products[index];
+            state.products[index] = {
+                ...oldProduct,
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                price: parseFloat(formData.price),
+                category: formData.category,
+                image: formData.imageUrl || currentImageData || oldProduct.image
+            };
+            showToast(`"${formData.title}" ${t('toastUpdated')}`, 'success');
+        }
+    } else {
+        const product = {
+            id: generateId(),
+            title: formData.title.trim(),
+            description: formData.description.trim(),
+            price: parseFloat(formData.price),
+            category: formData.category,
+            likes: 0,
+            comments: [],
+            image: formData.imageUrl || currentImageData || null,
+            createdAt: new Date().toISOString()
+        };
+        state.products.unshift(product);
+        showToast(`"${product.title}" ${t('toastAdded')}`, 'success');
+    }
 
-    // Add to state
-    state.products.unshift(product);
     saveProducts();
 
     // Reset form and close modal
     e.target.reset();
+    state.editingProductId = null;
     resetImageUpload();
     showFormErrors({});
     closeModal('addProductModal');
@@ -488,7 +557,53 @@ function handleAddProduct(e) {
     // Re-render and notify
     renderProducts();
     updateStats();
-    showToast(`"${product.title}" ${t('toastAdded')}`, 'success');
+}
+
+// ===== EDIT PRODUCT =====
+function openEditModal(productId) {
+    const product = state.products.find(p => p.id === productId);
+    if (!product) return;
+
+    state.editingProductId = productId;
+
+    // Populate form
+    document.getElementById('productTitle').value = product.title;
+    document.getElementById('productDescription').value = product.description;
+    document.getElementById('productPrice').value = product.price;
+    document.getElementById('productCategory').value = product.category;
+
+    const urlInput = document.getElementById('productImageUrl');
+    if (urlInput) {
+        // If image is a URL (starts with http), put it in URL field
+        if (product.image && product.image.startsWith('http')) {
+            urlInput.value = product.image;
+        } else {
+            urlInput.value = '';
+        }
+    }
+
+    // Handle preview
+    const preview = document.getElementById('imagePreview');
+    const placeholder = document.getElementById('uploadPlaceholder');
+
+    if (product.image) {
+        preview.src = product.image;
+        preview.hidden = false;
+        placeholder.hidden = true;
+        // If it was a base64 from file upload, keep it in currentImageData if we want to preserve it
+        // but it's cleaner to let the user re-upload or keep the old one
+        if (product.image.startsWith('data:')) {
+            currentImageData = product.image;
+        }
+    } else {
+        resetImageUpload();
+    }
+
+    // UI Updates
+    document.getElementById('addProductTitle').textContent = t('editProduct');
+    document.querySelector('.btn-submit').textContent = t('saveChanges');
+
+    openModal('addProductModal');
 }
 
 // ===== DELETE PRODUCT =====
@@ -652,6 +767,9 @@ function createProductCard(product, index) {
                 </button>
                 <button class="btn-comment" data-action="detail" data-id="${product.id}" title="Comments">
                     💬 ${product.comments.length}
+                </button>
+                <button class="btn-edit" data-action="edit" data-id="${product.id}" title="${t('editButton')}">
+                    ✏️
                 </button>
                 <button class="btn-delete" data-action="delete" data-id="${product.id}" title="Delete">
                     🗑️
@@ -881,6 +999,10 @@ function initEventDelegation() {
                 e.stopPropagation();
                 openDetailModal(productId);
                 break;
+            case 'edit':
+                e.stopPropagation();
+                openEditModal(productId);
+                break;
         }
     });
 }
@@ -895,6 +1017,11 @@ function initEventListeners() {
 
     // Show add product modal
     document.getElementById('showAddFormBtn').addEventListener('click', () => {
+        state.editingProductId = null;
+        document.getElementById('productForm').reset();
+        resetImageUpload();
+        document.getElementById('addProductTitle').textContent = t('addNewProduct');
+        document.querySelector('.btn-submit').textContent = t('submitProduct');
         openModal('addProductModal');
     });
 

@@ -505,6 +505,7 @@ main {
 
 .btn-like,
 .btn-comment,
+.btn-edit,
 .btn-delete {
     padding: 6px 12px;
     border: 1.5px solid var(--border);
@@ -545,6 +546,16 @@ main {
     animation: float 1.5s ease-in-out infinite;
 }
 
+.btn-edit:hover {
+    border-color: var(--warning);
+    color: var(--warning);
+    background: var(--warning-light);
+}
+
+.btn-edit:hover span {
+    animation: rotatePop 0.4s ease;
+}
+
 .btn-delete:hover {
     border-color: var(--accent);
     color: var(--accent);
@@ -553,6 +564,20 @@ main {
 
 .btn-delete:hover span {
     animation: shake 0.4s ease-in-out;
+}
+
+@keyframes rotatePop {
+    0% {
+        transform: scale(1) rotate(0);
+    }
+
+    50% {
+        transform: scale(1.2) rotate(15deg);
+    }
+
+    100% {
+        transform: scale(1.1) rotate(0);
+    }
 }
 
 @keyframes heartbeat {
