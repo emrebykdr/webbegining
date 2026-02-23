@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BEUShareBox - Mini social media product sharing platform">
+    <title>BEUShareBox — Share Your Products</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header id="app-header">
+        <div class="header-left">
+            <h1 class="logo">📦 BEU<span>ShareBox</span></h1>
+        </div>
+        <div class="header-center">
+            <div class="search-wrapper">
+                <input type="search" id="searchInput" data-i18n-placeholder="searchPlaceholder"
+                    placeholder="Search products..." autocomplete="off">
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="stats-mini" id="statsMini">
+                <span id="totalProductsMini" title="Total Products">📦 0</span>
+                <span id="totalLikesMini" title="Total Likes">❤️ 0</span>
+            </div>
+            <button id="langToggle" class="btn-icon btn-lang" title="Change Language" aria-label="Change language">🌐
+                TR</button>
+            <button id="themeToggle" class="btn-icon" title="Toggle Dark/Light Mode"
+                aria-label="Toggle theme">🌙</button>
+            <button id="showStatsBtn" class="btn-icon" title="Statistics Dashboard" aria-label="Statistics">📊</button>
+            <button id="showAddFormBtn" class="btn-primary" data-i18n="addProduct" title="Add New Product">+ Add
+                Product</button>
+        </div>
+    </header>
+
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div id="toastContainer" aria-live="polite"></div>
+
+    <!-- ===== ADD PRODUCT MODAL ===== -->
+    <div class="modal-overlay" id="addProductModal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addProductTitle">
+            <div class="modal-header">
+                <h2 id="addProductTitle" data-i18n="addNewProduct">Add New Product</h2>
+                <button class="modal-close" data-close="addProductModal" aria-label="Close">&times;</button>
+            </div>
+            <form id="productForm" novalidate>
+                <div class="form-group">
+                    <label for="productTitle" data-i18n="titleLabel">Title *</label>
+                    <input type="text" id="productTitle" name="title" data-i18n-placeholder="titlePlaceholder"
+                        placeholder="Product name" required maxlength="80">
+                    <span class="error-msg" id="titleError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="productDescription" data-i18n="descLabel">Description *</label>
+                    <textarea id="productDescription" name="description" data-i18n-placeholder="descPlaceholder"
+                        placeholder="Short description" required maxlength="300" rows="3"></textarea>
+                    <span class="error-msg" id="descError"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productPrice" data-i18n="priceLabel">Price (₺) *</label>
+                        <input type="number" id="productPrice" name="price" placeholder="0.00" required min="0"
+                            step="0.01">
+                        <span class="error-msg" id="priceError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="productCategory" data-i18n="categoryLabel">Category *</label>
+                        <select id="productCategory" name="category" required>
+                            <option value="" data-i18n="selectCategory">Select category</option>
+                            <option value="Electronics" data-i18n="catElectronics">Electronics</option>
+                            <option value="Books" data-i18n="catBooks">Books</option>
+                            <option value="Clothing" data-i18n="catClothing">Clothing</option>
+                            <option value="Home" data-i18n="catHome">Home & Garden</option>
+                            <option value="Sports" data-i18n="catSports">Sports</option>
+                            <option value="Other" data-i18n="catOther">Other</option>
+                        </select>
+                        <span class="error-msg" id="catError"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="productImage" data-i18n="imageLabel">Product Image (optional)</label>
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <input type="file" id="productImage" name="image" accept="image/*" hidden>
+                        <div class="upload-placeholder" id="uploadPlaceholder">
+                            <span class="upload-icon">📷</span>
+                            <p data-i18n="imageDragText">Click or drag image here</p>
+                        </div>
+                        <img id="imagePreview" class="image-preview" alt="Preview" hidden>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" data-i18n="submitProduct">🚀 Add Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== PRODUCT DETAIL MODAL ===== -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal modal-detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+            <div class="modal-header">
+                <h2 id="detailTitle">Product Detail</h2>
+                <button class="modal-close" data-close="detailModal" aria-label="Close">&times;</button>
+            </div>
+            <div id="detailContent" class="detail-content"></div>
+        </div>
+    </div>
+
+    <!-- ===== STATISTICS MODAL ===== -->
+    <div class="modal-overlay" id="statsModal">
+        <div class="modal modal-stats" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+            <div class="modal-header">
+                <h2 id="statsTitle" data-i18n="statsDashboard">📊 Statistics Dashboard</h2>
+                <button class="modal-close" data-close="statsModal" aria-label="Close">&times;</button>
+            </div>
+            <div id="statsContent" class="stats-content"></div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main>
+        <!-- Filters & Sort Bar -->
+        <section class="toolbar" aria-label="Filters and sorting">
+            <div class="filter-group">
+                <label class="toolbar-label" data-i18n="categoryToolbar">Category:</label>
+                <div class="filter-buttons" id="filterButtons" role="tablist">
+                    <button class="filter-btn active" data-category="all" data-i18n="filterAll">All</button>
+                    <button class="filter-btn" data-category="Electronics"
+                        data-i18n="catElectronics">Electronics</button>
+                    <button class="filter-btn" data-category="Books" data-i18n="catBooks">Books</button>
+                    <button class="filter-btn" data-category="Clothing" data-i18n="catClothing">Clothing</button>
+                    <button class="filter-btn" data-category="Home" data-i18n="catHome">Home</button>
+                    <button class="filter-btn" data-category="Sports" data-i18n="catSports">Sports</button>
+                    <button class="filter-btn" data-category="Other" data-i18n="catOther">Other</button>
+                </div>
+            </div>
+            <div class="sort-group">
+                <label class="toolbar-label" for="sortSelect" data-i18n="sortBy">Sort by:</label>
+                <select id="sortSelect">
+                    <option value="newest" data-i18n="sortNewest">Newest First</option>
+                    <option value="oldest" data-i18n="sortOldest">Oldest First</option>
+                    <option value="priceAsc" data-i18n="sortPriceLow">Price: Low → High</option>
+                    <option value="priceDesc" data-i18n="sortPriceHigh">Price: High → Low</option>
+                    <option value="likes" data-i18n="sortLikes">Most Liked</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Product Grid -->
+        <section class="product-grid" id="productGrid" aria-label="Product list">
+            <!-- Products are rendered dynamically -->
+        </section>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" hidden>
+            <div class="empty-icon">🛒</div>
+            <h3 data-i18n="emptyTitle">No products yet!</h3>
+            <p data-i18n="emptyDesc">Click <strong>+ Add Product</strong> to share your first product.</p>
+        </div>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p data-i18n="footerText">&copy; 2026 BEUShareBox — Built with ❤️ using HTML, CSS & JavaScript</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
