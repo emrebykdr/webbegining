@@ -505,6 +505,7 @@ main {
 
 .btn-like,
 .btn-comment,
+.btn-visit,
 .btn-edit,
 .btn-delete {
     padding: 6px 12px;
@@ -544,6 +545,12 @@ main {
 
 .btn-comment:hover span {
     animation: float 1.5s ease-in-out infinite;
+}
+
+.btn-visit:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
 }
 
 .btn-edit:hover {
@@ -798,6 +805,68 @@ form#productForm {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+}
+
+/* URL Input Group with Magic Button */
+.url-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-magic {
+    width: 44px;
+    height: 44px;
+    background: var(--primary-light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+}
+
+.btn-magic:hover {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-magic:active {
+    transform: translateY(0);
+}
+
+/* Fetch Loader & Spinner */
+.fetch-loader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--primary-light);
+    border-radius: var(--radius-sm);
+    color: var(--primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    animation: fadeIn 0.3s ease;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(30, 41, 59, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Image Upload */

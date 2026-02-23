@@ -56,6 +56,12 @@ const TRANSLATIONS = {
         addNewProduct: 'Add New Product',
         toastUpdated: 'has been updated!',
         editButton: 'Edit',
+        fetching: 'Fetching details...',
+        fetchSuccess: 'Details fetched successfully! ✨',
+        fetchError: 'Could not fetch details. Please check the URL.',
+        invalidUrl: 'Please enter a valid URL first.',
+        visitSite: 'Visit Site',
+        visitProduct: 'Visit Original Product',
         // Toolbar
         categoryToolbar: 'Category:',
         filterAll: 'All',
@@ -130,6 +136,12 @@ const TRANSLATIONS = {
         addNewProduct: 'Yeni Ürün Ekle',
         toastUpdated: 'güncellendi!',
         editButton: 'Düzenle',
+        fetching: 'Bilgiler çekiliyor...',
+        fetchSuccess: 'Bilgiler başarıyla getirildi! ✨',
+        fetchError: 'Bilgiler çekilemedi. Lütfen linki kontrol edin.',
+        invalidUrl: 'Lütfen önce geçerli bir link girin.',
+        visitSite: 'Siteye Git',
+        visitProduct: 'Orijinal Ürünü Gör',
         // Toolbar
         categoryToolbar: 'Kategori:',
         filterAll: 'Tümü',
@@ -491,7 +503,10 @@ function resetImageUpload() {
     preview.src = '';
     placeholder.hidden = false;
     fileInput.value = '';
-    if (urlInput) urlInput.value = '';
+    if (urlInput) {
+        urlInput.value = '';
+        delete urlInput.dataset.sourceUrl;
+    }
 }
 
 // ===== ADD PRODUCT =====
@@ -519,17 +534,24 @@ function handleAddProduct(e) {
         const index = state.products.findIndex(p => p.id === state.editingProductId);
         if (index !== -1) {
             const oldProduct = state.products[index];
+            const urlInput = document.getElementById('productImageUrl');
+            const sourceUrl = urlInput ? (urlInput.dataset.sourceUrl || formData.imageUrl) : oldProduct.sourceUrl;
+
             state.products[index] = {
                 ...oldProduct,
                 title: formData.title.trim(),
                 description: formData.description.trim(),
                 price: parseFloat(formData.price),
                 category: formData.category,
-                image: formData.imageUrl || currentImageData || oldProduct.image
+                image: formData.imageUrl || currentImageData || oldProduct.image,
+                sourceUrl: sourceUrl
             };
             showToast(`"${formData.title}" ${t('toastUpdated')}`, 'success');
         }
     } else {
+        const urlInput = document.getElementById('productImageUrl');
+        const sourceUrl = urlInput ? (urlInput.dataset.sourceUrl || formData.imageUrl) : null;
+
         const product = {
             id: generateId(),
             title: formData.title.trim(),
@@ -539,6 +561,7 @@ function handleAddProduct(e) {
             likes: 0,
             comments: [],
             image: formData.imageUrl || currentImageData || null,
+            sourceUrl: sourceUrl,
             createdAt: new Date().toISOString()
         };
         state.products.unshift(product);
@@ -599,11 +622,108 @@ function openEditModal(productId) {
         resetImageUpload();
     }
 
-    // UI Updates
     document.getElementById('addProductTitle').textContent = t('editProduct');
     document.querySelector('.btn-submit').textContent = t('saveChanges');
 
     openModal('addProductModal');
+}
+
+// ===== WEB SCRAPING (MAGIC FETCH) =====
+async function fetchProductMetadata() {
+    const urlInput = document.getElementById('productImageUrl');
+    const url = urlInput.value.trim();
+    const loader = document.getElementById('fetchLoader');
+    const magicBtn = document.getElementById('magicFetchBtn');
+
+    if (!url || !url.startsWith('http')) {
+        showToast(t('invalidUrl'), 'error');
+        return;
+    }
+
+    // UI Feedback
+    loader.hidden = false;
+    magicBtn.disabled = true;
+    magicBtn.style.opacity = '0.5';
+
+    try {
+        // Using Microlink API to fetch OpenGraph metadata
+        const response = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&palette=true`);
+        const data = await response.json();
+
+        if (data.status === 'success' && data.data) {
+            const metadata = data.data;
+
+            // Autofill fields
+            if (metadata.title) {
+                document.getElementById('productTitle').value = metadata.title;
+            }
+            if (metadata.description) {
+                document.getElementById('productDescription').value = metadata.description;
+            }
+            if (metadata.image && metadata.image.url) {
+                // Set the input field to the actual IMAGE URL so it saves correctly
+                urlInput.value = metadata.image.url;
+                // Store the original page URL in a data attribute to preserve it as the source URL
+                urlInput.dataset.sourceUrl = data.data.url || url;
+
+                const preview = document.getElementById('imagePreview');
+                const placeholder = document.getElementById('uploadPlaceholder');
+                preview.src = metadata.image.url;
+                preview.hidden = false;
+                placeholder.hidden = true;
+            }
+
+            // EXTENDED: Price and Category extraction
+            if (metadata.price) {
+                // If it's a number, use it. If it's a string, try to parse it.
+                let priceValue = 0;
+                if (typeof metadata.price === 'number') {
+                    priceValue = metadata.price;
+                } else if (typeof metadata.price === 'string') {
+                    // Extract numbers and decimal point
+                    const parsed = metadata.price.replace(/[^0-9,.]/g, '').replace(',', '.');
+                    priceValue = parseFloat(parsed) || 0;
+                }
+                if (priceValue > 0) {
+                    document.getElementById('productPrice').value = priceValue;
+                }
+            }
+
+            // Map Category if possible
+            const rawCategory = metadata.category || metadata.type || '';
+            if (rawCategory) {
+                const mapped = mapToInternalCategory(rawCategory);
+                if (mapped) {
+                    document.getElementById('productCategory').value = mapped;
+                }
+            }
+
+            showToast(t('fetchSuccess'), 'success');
+        } else {
+            throw new Error('API returned failure');
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+        showToast(t('fetchError'), 'error');
+    } finally {
+        loader.hidden = true;
+        magicBtn.disabled = false;
+        magicBtn.style.opacity = '1';
+    }
+}
+
+// Helper to map external category strings to internal values
+function mapToInternalCategory(raw) {
+    const text = raw.toLowerCase();
+    if (text.includes('electron') || text.includes('tech') || text.includes('phone') || text.includes('comput')) return 'Electronics';
+    if (text.includes('book') || text.includes('read') || text.includes('kitap')) return 'Books';
+    if (text.includes('cloth') || text.includes('wear') || text.includes('fashion') || text.includes('giyim')) return 'Clothing';
+    if (text.includes('home') || text.includes('garden') || text.includes('furnit') || text.includes('mutfak') || text.includes('ev')) return 'Home';
+    if (text.includes('sport') || text.includes('fit') || text.includes('gym') || text.includes('spor')) return 'Sports';
+
+    // Default fallback or matching against current selects
+    const categories = ['Electronics', 'Books', 'Clothing', 'Home', 'Sports', 'Other'];
+    return categories.find(cat => text.includes(cat.toLowerCase())) || 'Other';
 }
 
 // ===== DELETE PRODUCT =====
@@ -749,7 +869,7 @@ function createProductCard(product, index) {
 
     // Image or placeholder
     const imageHtml = product.image
-        ? `<img class="card-image" src="${product.image}" alt="${product.title}" loading="lazy">`
+        ? `<img class="card-image" src="${product.image}" alt="${product.title}" loading="lazy" onerror="this.onerror=null; this.outerHTML='<div class=\"card-image-placeholder\">${CATEGORY_ICONS[product.category] || '📦'}</div>';">`
         : `<div class="card-image-placeholder">${CATEGORY_ICONS[product.category] || '📦'}</div>`;
 
     article.innerHTML = `
@@ -768,6 +888,10 @@ function createProductCard(product, index) {
                 <button class="btn-comment" data-action="detail" data-id="${product.id}" title="Comments">
                     💬 ${product.comments.length}
                 </button>
+                ${product.sourceUrl ? `
+                <button class="btn-visit" data-action="visit" data-url="${product.sourceUrl}" title="${t('visitSite')}">
+                    🌐
+                </button>` : ''}
                 <button class="btn-edit" data-action="edit" data-id="${product.id}" title="${t('editButton')}">
                     ✏️
                 </button>
@@ -837,6 +961,12 @@ function openDetailModal(productId) {
         </div>
         <div class="comments-section">
             <h4>${t('comments')}</h4>
+            ${product.sourceUrl ? `
+            <div style="margin-bottom: 20px;">
+                <a href="${product.sourceUrl}" target="_blank" class="btn-submit" style="display:inline-flex;text-decoration:none;justify-content:center;width:auto;padding:10px 20px;">
+                    🔗 ${t('visitProduct')}
+                </a>
+            </div>` : ''}
             <div class="comment-list" id="commentList-${product.id}">
                 ${commentsHtml || `<p style="color:var(--text-muted);font-size:0.85rem;">${t('noCommentsYet')}</p>`}
             </div>
@@ -1003,6 +1133,11 @@ function initEventDelegation() {
                 e.stopPropagation();
                 openEditModal(productId);
                 break;
+            case 'visit':
+                e.stopPropagation();
+                const url = target.closest('[data-url]').getAttribute('data-url');
+                if (url) window.open(url, '_blank');
+                break;
         }
     });
 }
@@ -1033,6 +1168,9 @@ function initEventListeners() {
 
     // Product form submit
     document.getElementById('productForm').addEventListener('submit', handleAddProduct);
+
+    // Magic Fetch Button
+    document.getElementById('magicFetchBtn').addEventListener('click', fetchProductMetadata);
 
     // Close modal buttons
     document.querySelectorAll('.modal-close').forEach(btn => {

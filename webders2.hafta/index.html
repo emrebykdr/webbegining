@@ -95,6 +95,15 @@
                 </div>
                 <div class="form-group">
                     <label for="productImageUrl" data-i18n="imageUrlLabel">OR Image URL</label>
+                    <div class="url-input-group">
+                        <input type="url" id="productImageUrl" name="imageUrl"
+                            data-i18n-placeholder="imageUrlPlaceholder" placeholder="https://example.com/image.jpg">
+                        <button type="button" id="magicFetchBtn" class="btn-magic" title="Fetch Details">🪄</button>
+                    </div>
+                    <div id="fetchLoader" class="fetch-loader" hidden>
+                        <div class="spinner"></div>
+                        <span data-i18n="fetching">Fetching details...</span>
+                    </div>
                     <input type="url" id="productImageUrl" name="imageUrl" data-i18n-placeholder="imageUrlPlaceholder"
                         placeholder="https://example.com/image.jpg">
                 </div>
