@@ -1,0 +1,197 @@
+# BEUBlog
+
+Modern, full-stack blog platformu. React frontend ve Node.js/Express backend ile geliştirilmiş, Docker ile deploy edilmeye hazır bir uygulama.
+
+![Light Mode](https://img.shields.io/badge/Tema-Aydınlık-f8f9fc?style=flat-square) ![Dark Mode](https://img.shields.io/badge/Tema-Karanlık-0f0f1a?style=flat-square) ![License](https://img.shields.io/badge/Lisans-Eğitim-667eea?style=flat-square)
+
+## 🚀 Teknoloji Yığını
+
+### Frontend
+- **React 18** + **Vite** — Hızlı geliştirme ve build
+- **React Router DOM** — SPA yönlendirme
+- **React Quill** — Zengin metin editörü (WYSIWYG)
+- **Axios** — HTTP istemcisi
+- **Lucide React** — İkon kütüphanesi
+
+### Backend
+- **Node.js** + **Express 5** — REST API
+- **MongoDB** + **Mongoose** — Veritabanı ve ODM
+- **JWT** — Kimlik doğrulama
+- **Multer** — Dosya yükleme
+- **bcryptjs** — Parola şifreleme
+
+### DevOps
+- **Docker** + **Docker Compose** — Konteynerizasyon
+- **Nginx** — Frontend sunucu (production)
+
+## ✨ Özellikler
+
+- 🔐 Kullanıcı kayıt, giriş ve profil yönetimi (JWT)
+- 👑 Rol tabanlı yetkilendirme (kullanıcı / admin)
+- 📝 Blog yazısı oluşturma, düzenleme, silme
+- ✍️ Zengin metin editörü ile içerik yazma
+- 🏷️ Kategori sistemi (admin tarafından yönetilir)
+- ❤️ Yazı beğenme sistemi
+- 🛡️ Yazı moderasyonu — admin onay/askıya alma
+- 🖼️ Görsel yükleme (JPEG, PNG, GIF, WebP, SVG — maks. 10MB)
+- 🌙 Karanlık / Aydınlık tema desteği
+- 🇹🇷 Türkçe arayüz
+
+## 📦 Kurulum
+
+### Docker ile (Önerilen)
+
+```bash
+# Repoyu klonla
+git clone https://github.com/emrebykdr/webbegining.git
+cd webbegining/3hafta
+
+# Servisleri başlat
+docker compose up -d
+```
+
+Uygulama şu adreslerde çalışacaktır:
+
+| Servis | Adres |
+|--------|-------|
+| **Frontend** | http://localhost |
+| **Backend API** | http://localhost:5000 |
+| **MongoDB** | localhost:27017 |
+
+### Manuel Kurulum
+
+#### Backend
+```bash
+cd backend
+npm install
+
+# .env dosyası oluştur
+echo "PORT=5000" > .env
+echo "MONGODB_URI=mongodb://localhost:27017/blogdb" >> .env
+echo "JWT_SECRET=guclu-bir-secret-key" >> .env
+
+npm start
+```
+
+#### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 📁 Proje Yapısı
+
+```
+3hafta/
+├── docker-compose.yml
+├── backend/
+│   ├── server.js                # Express sunucu giriş noktası
+│   ├── Dockerfile
+│   ├── middleware/
+│   │   └── auth.js              # JWT doğrulama, admin kontrolü
+│   ├── models/
+│   │   ├── User.js              # Kullanıcı şeması
+│   │   ├── Post.js              # Yazı şeması
+│   │   └── Category.js          # Kategori şeması
+│   ├── routes/
+│   │   ├── auth.js              # Kimlik doğrulama endpointleri
+│   │   ├── posts.js             # Yazı CRUD endpointleri
+│   │   ├── categories.js        # Kategori endpointleri
+│   │   └── upload.js            # Dosya yükleme
+│   ├── make-admin.js            # Kullanıcıyı admin yapma scripti
+│   └── migrate-slugs.js         # Slug migrasyon scripti
+└── frontend/
+    ├── Dockerfile
+    ├── nginx.conf
+    └── src/
+        ├── App.jsx              # Ana bileşen ve yönlendirme
+        ├── api.js               # Axios API katmanı
+        ├── index.css            # Global stiller ve tema
+        ├── context/
+        │   ├── AuthContext.jsx   # Auth state yönetimi
+        │   └── ThemeContext.jsx  # Tema yönetimi
+        ├── components/
+        │   ├── Navbar.jsx
+        │   └── Footer.jsx
+        └── pages/
+            ├── Home.jsx         # Ana sayfa / yazı listesi
+            ├── CreatePost.jsx   # Yeni yazı oluşturma
+            ├── EditPost.jsx     # Yazı düzenleme
+            ├── PostDetail.jsx   # Yazı detay sayfası
+            ├── Dashboard.jsx    # Kullanıcı paneli
+            ├── Login.jsx
+            └── Register.jsx
+```
+
+## 🔌 API Endpointleri
+
+### Kimlik Doğrulama
+
+| Metot | Endpoint | Açıklama |
+|-------|----------|----------|
+| POST | `/api/auth/register` | Yeni kullanıcı kaydı |
+| POST | `/api/auth/login` | Giriş yapma |
+| GET | `/api/auth/me` | Mevcut kullanıcı bilgisi |
+| PUT | `/api/auth/me/profile` | Profil güncelleme |
+| PUT | `/api/auth/me/password` | Parola değiştirme |
+| GET | `/api/auth/me/posts` | Kullanıcının yazıları |
+
+### Yazılar
+
+| Metot | Endpoint | Açıklama |
+|-------|----------|----------|
+| GET | `/api/posts` | Yazı listesi (filtre & sayfalama) |
+| POST | `/api/posts` | Yeni yazı oluştur |
+| GET | `/api/posts/by-slug/:slug` | Slug ile yazı getir |
+| PUT | `/api/posts/:id` | Yazı güncelle |
+| DELETE | `/api/posts/:id` | Yazı sil |
+| PUT | `/api/posts/:id/like` | Yazıyı beğen/beğenmekten vazgeç |
+| PUT | `/api/posts/:id/status` | Yazı durumunu değiştir (admin) |
+
+### Kategoriler
+
+| Metot | Endpoint | Açıklama |
+|-------|----------|----------|
+| GET | `/api/categories` | Kategori listesi |
+| POST | `/api/categories` | Kategori oluştur (admin) |
+| DELETE | `/api/categories/:id` | Kategori sil (admin) |
+
+### Dosya Yükleme
+
+| Metot | Endpoint | Açıklama |
+|-------|----------|----------|
+| POST | `/api/upload` | Görsel yükle |
+
+## 🔧 Yardımcı Scriptler
+
+```bash
+# Bir kullanıcıyı admin yap
+node backend/make-admin.js
+
+# Mevcut yazılara slug ekle (migrasyon)
+node backend/migrate-slugs.js
+```
+
+## ⚙️ Ortam Değişkenleri
+
+| Değişken | Açıklama | Varsayılan |
+|----------|----------|------------|
+| `PORT` | Backend sunucu portu | `5000` |
+| `MONGODB_URI` | MongoDB bağlantı adresi | `mongodb://localhost:27017/blogdb` |
+| `JWT_SECRET` | JWT token imzalama anahtarı | — (zorunlu) |
+
+## 👤 Varsayılan Admin Hesabı
+
+Uygulama ilk çalıştırıldığında otomatik olarak bir admin hesabı oluşturulur:
+
+| Alan | Değer |
+|------|-------|
+| **E-posta** | `admin@beublog.com` |
+| **Parola** | `admin123` |
+
+> ⚠️ Production ortamında bu parolayı değiştirmeyi unutmayın!
+
+## 📄 Lisans
+
+Bu proje eğitim amaçlı geliştirilmiştir.
