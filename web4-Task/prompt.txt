@@ -1,0 +1,674 @@
+
+MERN STACK
+TASK MANAGER UYGULAMASI
+Katmanlı Mimari & Gelismiş Güvenlik Rehberi
+
+Kapsam
+•  MongoDB + Mongoose ODM + Validation
+•  Express.js REST API (CRUD)
+•  React.js (Kanban Dashboard)
+•  Node.js Backend Mimarisi
+•  bcrypt Password Hashing
+•  JWT Authentication
+•  Gelismis Hata Yönetimi
+
+Versiyon 1.0  |  Mart 2025
+ 
+ 
+1. Projeye Genel Bakis
+Bu döküman, MERN mimarisi üzerine kurulu, katmanlı yapıda gelistirilmis bir Task Manager (Görev Yöneticisi) uygulamasının sıfırdan nasıl olusturulacagını adım adım açıklamaktadır. Uygulama; gelismis validasyon, güvenli sifre hashing ve JWT tabanlı kimlik dogrulama içermektedir.
+
+Teknoloji Yigini
+MongoDB (veritabanı) + Express.js (backend) + React.js (frontend) + Node.js (runtime) | bcrypt (hashing) + JWT (auth) + Mongoose (ODM)
+
+1.1 Proje Özellikleri
+•	Kanban tarzı görev panosu: Yapılacak, Devam Ediyor, Tamamlandı
+•	Görev oluşturma, güncelleme, silme ve durum degistirme
+•	Kategori ve öncelik bazlı filtreleme
+•	Alt görevler (checklist) desteği
+•	Son tarih takibi ve gecikme bildirimleri
+•	Kullanıcı kayıt / giris sistemi (bcrypt + JWT)
+•	Gelismis Mongoose validasyonları
+•	Merkezi hata yönetimi middleware'i
+
+ 
+2. Mimari Yapı
+Uygulama üç ana katmandan olusmaktadır: Frontend (React), Backend (Node.js/Express) ve Veritabanı (MongoDB). Her katman kendi sorumluluguna sahip olup birbirinden bagimsız gelistirilebilir.
+
+2.1 Katmanlar Arası Iletisim
+Katman	Teknoloji	Port	Sorumluluk
+Frontend	React.js + Vite	:5173	UI render, state yönetimi, API çagrıları
+Backend	Node.js + Express	:3000	REST API, is mantıgı, middleware
+Veritabanı	MongoDB	:27017	Veri saklama, sorgulama, indeksleme
+
+2.2 Backend Katman Yapısı (MVC + Service)
+Backend tarafında MVC (Model-View-Controller) mimarisi genisletilerek Service katmanı eklenmiştir. Bu yapı, iş mantığını controller'dan ayırarak test edilebilirliği artırır.
+
+Katman	Dosyalar	Açıklama
+Routes	routes/task.routes.js	URL eşleme, HTTP method yönlendirme
+Middleware	middlewares/auth.js, error.js, validate.js	JWT kontrol, hata yakalama, validation
+Controllers	controllers/task.controller.js	Request/Response islemleri, HTTP status
+Services	services/task.service.js	Is mantıgı, veri dönüstürme
+Models	models/Task.model.js, User.model.js	Mongoose schema, validasyon, hooks
+Config	config/db.js, config/jwt.js	DB baglantı, JWT ayarları
+
+2.3 Klasör Yapısı
+task-manager/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── db.js           # MongoDB baglantısı
+│   │   │   └── jwt.js           # JWT secret/expire ayarları
+│   │   ├── controllers/
+│   │   │   ├── task.controller.js
+│   │   │   └── auth.controller.js
+│   │   ├── middlewares/
+│   │   │   ├── auth.middleware.js   # JWT verify
+│   │   │   ├── error.middleware.js  # Global error handler
+│   │   │   └── validate.middleware.js
+│   │   ├── models/
+│   │   │   ├── Task.model.js
+│   │   │   └── User.model.js
+│   │   ├── routes/
+│   │   │   ├── task.routes.js
+│   │   │   └── auth.routes.js
+│   │   ├── services/
+│   │   │   └── task.service.js
+│   │   └── utils/
+│   │       ├── ApiError.js
+│   │       └── asyncHandler.js
+│   ├── .env
+│   ├── package.json
+│   └── server.js
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   │   ├── TaskCard.jsx
+    │   │   ├── TaskForm.jsx
+    │   │   ├── FilterBar.jsx
+    │   │   └── Dashboard.jsx
+    │   ├── hooks/
+    │   │   └── useTasks.js
+    │   ├── services/
+    │   │   └── api.service.js
+    │   └── App.jsx
+    └── package.json
+
+ 
+3. Kurulum ve Baslangıç
+3.1 Ön Kosullar
+Araç	Versiyon	Indirme
+Node.js	>=18.x LTS	nodejs.org
+MongoDB	>=6.x	mongodb.com veya MongoDB Atlas
+npm / yarn	>=9.x / 1.x	npm ile gelir
+Git	Herhangi	git-scm.com
+
+3.2 Proje Kurulumu
+# 1. Projeyi klonla
+git clone https://github.com/kullanici/task-manager.git
+cd task-manager
+ 
+# 2. Backend bagimlılıkları
+cd backend
+npm install
+ 
+# 3. Frontend bagimlılıkları
+cd ../frontend
+npm install
+
+3.3 Ortam Degiskenleri (.env)
+Backend klasöründe bir .env dosyası olusturun:
+# backend/.env
+ 
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/taskmanager
+# veya Atlas için:
+# MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/taskmanager
+ 
+# Server
+PORT=3000
+NODE_ENV=development
+ 
+# JWT
+JWT_SECRET=cok_gizli_ve_uzun_bir_anahtar_buraya_yazın_min_32_karakter
+JWT_EXPIRE=7d
+JWT_REFRESH_SECRET=farkli_bir_refresh_secret_anahtarı
+JWT_REFRESH_EXPIRE=30d
+ 
+# bcrypt
+BCRYPT_SALT_ROUNDS=12
+
+3.4 Uygulamayı Çalıstırma
+# Terminal 1 - Backend
+cd backend
+npm run dev    # nodemon ile hot-reload
+ 
+# Terminal 2 - Frontend
+cd frontend
+npm run dev    # Vite dev server
+ 
+# Backend: http://localhost:3000
+# Frontend: http://localhost:5173
+
+ 
+4. Veritabanı Katmanı - MongoDB & Mongoose
+4.1 MongoDB Baglantısı
+Mongoose kullanarak MongoDB'ye baglanın. Baglantı konfigürasyonu ayrı bir dosyada tutulur:
+// backend/src/config/db.js
+const mongoose = require('mongoose');
+ 
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`MongoDB Baglantısı: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('MongoDB baglantı hatası:', error.message);
+    process.exit(1);
+  }
+};
+ 
+module.exports = connectDB;
+
+4.2 User Model - bcrypt Hashing
+Kullanıcı modelinde sifre hashing islemi Mongoose pre-save hook ile otomatik yapılır. Sifre asla düz metin olarak saklanmaz.
+// backend/src/models/User.model.js
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
+ 
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Isim zorunludur'],
+    trim: true,
+    minlength: [2, 'Isim en az 2 karakter olmalı'],
+    maxlength: [50, 'Isim en fazla 50 karakter olabilir'],
+  },
+  email: {
+    type: String,
+    required: [true, 'Email zorunludur'],
+    unique: true,
+    lowercase: true,
+    validate: {
+      validator: validator.isEmail,
+      message: 'Geçerli bir email adresi giriniz'
+    }
+  },
+  password: {
+    type: String,
+    required: [true, 'Sifre zorunludur'],
+    minlength: [8, 'Sifre en az 8 karakter olmalı'],
+    select: false,  // Sorgularda varsayılan olarak gelmez
+  },
+  role: {
+    type: String,
+    enum: { values: ['user', 'admin'], message: 'Geçersiz rol' },
+    default: 'user'
+  },
+  isActive: { type: Boolean, default: true },
+  lastLogin: { type: Date },
+  passwordChangedAt: { type: Date },
+}, {
+  timestamps: true,
+});
+ 
+// PRE-SAVE HOOK: Sifre degistiginde hash'le
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
+  this.password = await bcrypt.hash(this.password, saltRounds);
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+ 
+// METHOD: Sifre karsılastırma
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+ 
+// METHOD: JWT token'dan sonra sifre degisti mi?
+userSchema.methods.changedPasswordAfter = function(jwtTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTime = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return jwtTimestamp < changedTime;
+  }
+  return false;
+};
+ 
+module.exports = mongoose.model('User', userSchema);
+
+4.3 Task Model - Gelismis Validasyonlar
+// backend/src/models/Task.model.js
+const mongoose = require('mongoose');
+ 
+const subtaskSchema = new mongoose.Schema({
+  title: { type: String, required: true, trim: true, maxlength: 100 },
+  completed: { type: Boolean, default: false }
+});
+ 
+const taskSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: [true, 'Görev baslıgı zorunludur'],
+    trim: true,
+    minlength: [3, 'Baslık en az 3 karakter olmalı'],
+    maxlength: [200, 'Baslık en fazla 200 karakter olabilir'],
+  },
+  description: {
+    type: String,
+    maxlength: [1000, 'Açıklama en fazla 1000 karakter olabilir'],
+    default: ''
+  },
+  status: {
+    type: String,
+    enum: {
+      values: ['todo', 'in-progress', 'done'],
+      message: 'Geçersiz durum: {VALUE}'
+    },
+    default: 'todo'
+  },
+  priority: {
+    type: String,
+    enum: { values: ['düsük', 'orta', 'yüksek', 'acil'], message: 'Geçersiz öncelik' },
+    default: 'orta'
+  },
+  category: {
+    type: String,
+    enum: ['is', 'kisisel', 'okul', 'saglik', 'diger'],
+    default: 'diger'
+  },
+  dueDate: {
+    type: Date,
+    validate: {
+      validator: function(v) {
+        // Güncelleme sırasında geçmis tarihe izin ver
+        if (this.isNew) return v >= new Date();
+        return true;
+      },
+      message: 'Son tarih geçmiste olamaz'
+    }
+  },
+  subtasks: [subtaskSchema],
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Görevin sahibi olmalı']
+  },
+  tags: [{
+    type: String,
+    trim: true,
+    maxlength: [20, 'Etiket en fazla 20 karakter olabilir']
+  }],
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+ 
+// VIRTUAL: Gecikme durumu
+taskSchema.virtual('isOverdue').get(function() {
+  return this.dueDate && this.dueDate < new Date() && this.status !== 'done';
+});
+ 
+// VIRTUAL: Tamamlanan alt görev oranı
+taskSchema.virtual('subtaskProgress').get(function() {
+  if (!this.subtasks.length) return 0;
+  const done = this.subtasks.filter(s => s.completed).length;
+  return Math.round((done / this.subtasks.length) * 100);
+});
+ 
+// INDEX: Performans için
+taskSchema.index({ owner: 1, status: 1 });
+taskSchema.index({ owner: 1, dueDate: 1 });
+taskSchema.index({ title: 'text', description: 'text' }); // Full-text search
+ 
+module.exports = mongoose.model('Task', taskSchema);
+
+ 
+5. Backend - Express.js API
+5.1 Server Kurulumu
+// backend/server.js
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const connectDB = require('./src/config/db');
+const taskRoutes = require('./src/routes/task.routes');
+const authRoutes = require('./src/routes/auth.routes');
+const errorMiddleware = require('./src/middlewares/error.middleware');
+const ApiError = require('./src/utils/ApiError');
+ 
+const app = express();
+ 
+// Middleware
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }));
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true }));
+ 
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
+ 
+// 404 Handler
+app.all('*', (req, res, next) => {
+  next(new ApiError(`${req.originalUrl} bulunamadı`, 404));
+});
+ 
+// Global Error Handler (en sona!)
+app.use(errorMiddleware);
+ 
+const PORT = process.env.PORT || 3000;
+connectDB().then(() => {
+  app.listen(PORT, () => console.log(`Server port ${PORT}'da çalısıyor`));
+});
+
+5.2 JWT Kimlik Dogrulama
+// backend/src/middlewares/auth.middleware.js
+const jwt = require('jsonwebtoken');
+const User = require('../models/User.model');
+const asyncHandler = require('../utils/asyncHandler');
+const ApiError = require('../utils/ApiError');
+ 
+exports.protect = asyncHandler(async (req, res, next) => {
+  // 1) Token var mı?
+  let token;
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (!token) throw new ApiError('Giris yapmanız gerekiyor', 401);
+ 
+  // 2) Token geçerli mi?
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+ 
+  // 3) Kullanıcı hâlâ var mı?
+  const user = await User.findById(decoded.id);
+  if (!user) throw new ApiError('Kullanıcı artık mevcut degil', 401);
+ 
+  // 4) Token'dan sonra sifre degisti mi?
+  if (user.changedPasswordAfter(decoded.iat)) {
+    throw new ApiError('Sifre degistirildi. Tekrar giris yapın', 401);
+  }
+ 
+  req.user = user;
+  next();
+});
+
+5.3 Global Hata Yönetimi
+// backend/src/utils/ApiError.js
+class ApiError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+module.exports = ApiError;
+ 
+// backend/src/middlewares/error.middleware.js
+const ApiError = require('../utils/ApiError');
+ 
+const handleCastError = (err) =>
+  new ApiError(`Geçersiz ${err.path}: ${err.value}`, 400);
+ 
+const handleDuplicateKeyError = (err) => {
+  const field = Object.keys(err.keyValue)[0];
+  return new ApiError(`${field} zaten kullanımda`, 400);
+};
+ 
+const handleValidationError = (err) => {
+  const errors = Object.values(err.errors).map(e => e.message);
+  return new ApiError(`Validasyon hatası: ${errors.join(', ')}`, 400);
+};
+ 
+const handleJWTError = () => new ApiError('Geçersiz token', 401);
+const handleJWTExpiredError = () => new ApiError('Token süresi doldu', 401);
+ 
+module.exports = (err, req, res, next) => {
+  let error = { ...err, message: err.message };
+  error.statusCode = err.statusCode || 500;
+ 
+  if (err.name === 'CastError') error = handleCastError(err);
+  if (err.code === 11000) error = handleDuplicateKeyError(err);
+  if (err.name === 'ValidationError') error = handleValidationError(err);
+  if (err.name === 'JsonWebTokenError') error = handleJWTError();
+  if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
+ 
+  res.status(error.statusCode).json({
+    status: error.status || 'error',
+    message: error.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+};
+
+5.4 REST API Endpoint'leri
+Method	Endpoint	Açıklama	Auth
+POST	/api/auth/register	Yeni kullanıcı kaydı	Hayır
+POST	/api/auth/login	Giris, JWT döner	Hayır
+GET	/api/auth/me	Kendi profilimi gör	Evet
+GET	/api/tasks	Tüm görevleri listele	Evet
+POST	/api/tasks	Yeni görev olustur	Evet
+GET	/api/tasks/:id	Tek görev detayı	Evet
+PUT	/api/tasks/:id	Görevi güncelle	Evet
+DELETE	/api/tasks/:id	Görevi sil	Evet
+PATCH	/api/tasks/:id/status	Sadece durumu güncelle	Evet
+
+ 
+6. Frontend - React.js
+6.1 Gerekli Paketler
+cd frontend
+npm create vite@latest . -- --template react
+npm install axios react-router-dom
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+6.2 API Service Katmanı
+Tüm API çagrıları merkezi bir servis dosyasından yapılır. JWT token otomatik olarak header'a eklenir.
+// frontend/src/services/api.service.js
+import axios from 'axios';
+ 
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  timeout: 10000,
+});
+ 
+// Request Interceptor - Token ekleme
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+ 
+// Response Interceptor - 401 yönlendirme
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+ 
+export const taskService = {
+  getAll: (params) => api.get('/tasks', { params }),
+  getOne: (id) => api.get(`/tasks/${id}`),
+  create: (data) => api.post('/tasks', data),
+  update: (id, data) => api.put(`/tasks/${id}`, data),
+  delete: (id) => api.delete(`/tasks/${id}`),
+  updateStatus: (id, status) => api.patch(`/tasks/${id}/status`, { status }),
+};
+
+6.3 useTasks Custom Hook
+// frontend/src/hooks/useTasks.js
+import { useState, useEffect, useCallback } from 'react';
+import { taskService } from '../services/api.service';
+ 
+export const useTasks = (filters = {}) => {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+ 
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await taskService.getAll(filters);
+      setTasks(data.tasks);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Hata olustu');
+    } finally {
+      setLoading(false);
+    }
+  }, [JSON.stringify(filters)]);
+ 
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+ 
+  // Derived state - her status için filtrele
+  const todoTasks = tasks.filter(t => t.status === 'todo');
+  const inProgressTasks = tasks.filter(t => t.status === 'in-progress');
+  const doneTasks = tasks.filter(t => t.status === 'done');
+ 
+  const updateStatus = async (id, status) => {
+    await taskService.updateStatus(id, status);
+    await fetchTasks(); // Yenile
+  };
+ 
+  return { tasks, todoTasks, inProgressTasks, doneTasks,
+           loading, error, refetch: fetchTasks, updateStatus };
+};
+
+ 
+7. Güvenlik
+7.1 bcrypt Sifre Hashing
+bcrypt, sifreleri tek yönlü hash'ler. salt ile brute-force saldırılarına karsı dayanıklıdır. Salt rounds arttıkça güvenlik artar ancak performans düser.
+
+Salt Rounds	Hash Süresi	Kullanım Senaryosu
+10	~100ms	Gelistirme ortamı
+12 (önerilen)	~400ms	Prodüksiyon
+14	~1.5s	Yüksek güvenlik gerektiren sistemler
+
+Önemli
+salt_rounds degeri .env dosyasında tutulur (BCRYPT_SALT_ROUNDS=12). Asla kodun içine sabit yazılmaz.
+
+7.2 JWT Akısı
+•	Kullanıcı giris yapar → Backend sifre karsılastırır (bcrypt.compare)
+•	Sifre dogruysa → JWT token üretilir (jwt.sign)
+•	Token client'a döner → localStorage'a kaydedilir
+•	Her istekte → Authorization: Bearer <token> header'ı gönderilir
+•	Backend → jwt.verify ile token dogrular
+•	Token'dan userId çıkarılır → veritabanından kullanıcı getirilir
+
+7.3 Ek Güvenlik Önlemleri
+Güvenlik Katmanı	Paket / Yöntem	Açıklama
+Rate Limiting	express-rate-limit	Brute-force engelleme
+XSS Koruma	xss-clean / helmet	Zararlı script temizleme
+HTTP Headers	helmet	Güvenli HTTP basslıkları
+CORS	cors paketi	Sadece izinli origin'ler
+Input Sanitize	express-mongo-sanitize	NoSQL injection engelleme
+Sifre Select:false	Mongoose field option	Sifre sorgularda gelmez
+
+ 
+8. API Test Örnekleri
+8.1 Kayıt ve Giris
+# Kullanıcı Kaydı
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+ 
+{
+  "name": "Ali Yılmaz",
+  "email": "ali@example.com",
+  "password": "GüçlüSifre123!"
+}
+ 
+# Beklenen Yanıt:
+# { status: 'success', token: 'eyJhbGci...', data: { user: {...} } }
+ 
+# Giris
+POST http://localhost:3000/api/auth/login
+{
+  "email": "ali@example.com",
+  "password": "GüçlüSifre123!"
+}
+
+8.2 Görev Olusturma
+POST http://localhost:3000/api/tasks
+Authorization: Bearer eyJhbGci...
+Content-Type: application/json
+ 
+{
+  "title": "React hooks çalıs",
+  "description": "useEffect ve useRef konularını ögren",
+  "status": "in-progress",
+  "priority": "yüksek",
+  "category": "okul",
+  "dueDate": "2025-04-01",
+  "subtasks": [
+    { "title": "useEffect" },
+    { "title": "useRef" }
+  ],
+  "tags": ["react", "hooks"]
+}
+
+9. Tüm Bagimlılıklar
+9.1 Backend package.json
+{
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.3.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.4.0",
+    "validator": "^13.12.0",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.3"
+  }
+}
+
+9.2 Frontend package.json
+{
+  "dependencies": {
+    "axios": "^1.7.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.3.1"
+  }
+}
+
+ 
+10. Özet Kontrol Listesi
+Projeyi tamamlamadan önce asagıdaki maddeleri karsılayın:
+
+Alan	Kontrol Maddesi	Durum
+Veritabanı	MongoDB baglantısı .env'den okunuyor	[ ]
+Veritabanı	User model - bcrypt hash pre-save hook	[ ]
+Veritabanı	Task model - tüm validasyonlar tanımlı	[ ]
+Veritabanı	Mongoose indexleri eklendi	[ ]
+Backend	JWT auth middleware çalısıyor	[ ]
+Backend	Global error middleware en sonda	[ ]
+Backend	asyncHandler tüm controller'larda	[ ]
+Backend	CORS sadece frontend origin'i kabul ediyor	[ ]
+Güvenlik	Sifre field'ı select:false ile korunuyor	[ ]
+Güvenlik	BCRYPT_SALT_ROUNDS .env'de minimum 10	[ ]
+Güvenlik	JWT_SECRET minimum 32 karakter	[ ]
+Frontend	API service interceptor token ekliyor	[ ]
+Frontend	401 hatası login'e yönlendiriyor	[ ]
+Frontend	.env'de API URL tanımlı	[ ]
+
+MERN Stack Task Manager Projesi  |  Hazırlayan: Claude  |  2025
