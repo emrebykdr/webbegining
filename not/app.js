@@ -1,6 +1,5 @@
 // Firebase Config
 const firebaseConfig = {
-    apiKey: "AIzaSyCP8CDFQFNgC9uykWW9zyEu12rt_I4aJsA",
     authDomain: "sinif-not-defteri.firebaseapp.com",
     databaseURL: "https://sinif-not-defteri-default-rtdb.firebaseio.com",
     projectId: "sinif-not-defteri",
